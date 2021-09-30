@@ -1,0 +1,4 @@
+- Library Dependency
+-- LiquidCrystal_I2C
+-- PubSubClient
+-- ESP8266WiFi
