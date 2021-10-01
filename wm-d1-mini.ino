@@ -21,6 +21,9 @@ PubSubClient pubSubClient(wifiClient);
 // Keep track of time
 unsigned long mqtt_last_message_millis = millis();
 
+// Track NoData state
+bool noData = false;
+
 /* Caractères personnalisés */
 byte START_DIV_0_OF_1[8] = {
   B01111, 
@@ -242,6 +245,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
   else
     Serial.println(value);
 
+  if(noData == true) {
+    noData = false;
+    lcd.backlight();
+  }
+      
+
   draw_progressbar(value);
 
   // update last message received time
@@ -301,9 +310,10 @@ void loop() {
   pubSubClient.loop();
 
   /* Don't show wrong readings if data not received for sometime */
-  if (millis() - mqtt_last_message_millis > 5 * 60 * 1000) {
+  if (millis() - mqtt_last_message_millis > 1 * 60 * 1000 && noData == false) {
+    noData = true;
     lcd.clear();
     lcd.print("No data");   
-    delay(1000);
+    lcd.noBacklight();
   }
 } 
