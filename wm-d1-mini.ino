@@ -24,6 +24,9 @@ unsigned long mqtt_last_message_millis = millis();
 // Track NoData state
 bool noData = false;
 
+// Last read data
+byte lastReceivedData = -1;
+
 /* Caractères personnalisés */
 byte START_DIV_0_OF_1[8] = {
   B01111, 
@@ -184,6 +187,23 @@ void draw_progressbar(byte percent) {
   }
 }
 
+bool backlight = true;
+unsigned long previousMillis = 0; 
+void blinkBackLight() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= 1000) {
+    previousMillis = currentMillis;
+
+    if(backlight) {
+      lcd.noBacklight(); 
+    } else {
+      lcd.backlight();
+    }
+   backlight = !backlight;
+  }
+ 
+}
+
 void setup_wifi() {
 
   delay(10);
@@ -228,33 +248,50 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   char buffer[128];
 
-  // Make sure here that `length` is smaller than the above buffer size. 
-  // Otherwise, you'd need a bigger buffer
-
+ // Make sure here that `length` is smaller than the above buffer size. 
+ // Otherwise, you'd need a bigger buffer
+  
   // Form a C-string from the payload
   memcpy(buffer, payload, length);
   buffer[length] = '\0';
 
-  // Convert it to integer
-  char *end = nullptr;
-  long value = strtol(buffer, &end, 10);
+  if(strcmp(topic, "home/monitor/water/tank/percent") == 0) {
 
-  // Check for conversion errors
-  if (end == buffer)
-    ; // Conversion error occurred
-  else
-    Serial.println(value);
-
-  if(noData == true) {
-    noData = false;
-    lcd.backlight();
+    // Convert it to integer
+    char *end = nullptr;
+    long value = strtol(buffer, &end, 10);
+  
+    // Check for conversion errors
+    if (end == buffer)
+      ; // Conversion error occurred
+    else
+      Serial.println(value);
+  
+    if(noData == true) {
+      noData = false;
+      lcd.backlight();
+    }      
+  
+    if(lastReceivedData <= 15) {
+      lcd.backlight();
+    }
+  
+    lastReceivedData = value;
+    draw_progressbar(value);
+  
+    // update last message received time
+    mqtt_last_message_millis = millis();
+    
+  } else if (strcmp(topic, "home/monitor/water/backlight") == 0){
+    if(strcmp(buffer, "on") == 0) {
+      lcd.backlight();
+      bool backlight = true;
+    } else {
+      lcd.noBacklight();
+      bool backlight = false;
+    }
   }
-      
-
-  draw_progressbar(value);
-
-  // update last message received time
-  mqtt_last_message_millis = millis();
+  
 }
 
 void reconnect() {
@@ -272,7 +309,7 @@ void reconnect() {
     // Attempt to connect
     if (pubSubClient.connect(clientId.c_str())) {
       Serial.println("connected");
-      pubSubClient.subscribe("home/monitor/lcd/water/level");
+      pubSubClient.subscribe("home/monitor/water/#");
       lcd.clear();
       //lcd.print("MQTT Connected");
       lcd.setCursor(0,1);
@@ -299,7 +336,6 @@ void setup() {
   
   pubSubClient.setServer(MQTT_SERVER, 1883);
   pubSubClient.setCallback(callback);
-  //lcd.clear();
 }
 
 
@@ -310,10 +346,14 @@ void loop() {
   pubSubClient.loop();
 
   /* Don't show wrong readings if data not received for sometime */
-  if (millis() - mqtt_last_message_millis > 1 * 60 * 1000 && noData == false) {
+  if (millis() - mqtt_last_message_millis > 5 * 60 * 1000 && noData == false) {
     noData = true;
     lcd.clear();
     lcd.print("No data");   
     lcd.noBacklight();
+  }
+
+  if (lastReceivedData > -1 and lastReceivedData <= 15) {
+    blinkBackLight();
   }
 } 
