@@ -4,7 +4,7 @@
 
 const char* SSID = "SAYANI_WIFI";
 const char* PASSWORD = "00011101";
-const char* MQTT_SERVER = "192.168.8.11";
+const char* MQTT_SERVER = "192.168.8.10"; // pi4
 
 const int LCD_NB_ROWS = 2;
 const int LCD_NB_COLUMNS = 16;
