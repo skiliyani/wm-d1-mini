@@ -245,18 +245,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-
-  char buffer[128];
-
- // Make sure here that `length` is smaller than the above buffer size. 
- // Otherwise, you'd need a bigger buffer
   
-  // Form a C-string from the payload
-  memcpy(buffer, payload, length);
-  buffer[length] = '\0';
+  if(strcmp(topic, "home/ui/water-tank/level") == 0) {
 
-  if(strcmp(topic, "home/monitor/water/tank/percent") == 0) {
-
+    char buffer[length];
+    
+    // Form a C-string from the payload
+    memcpy(buffer, payload, length);
+    buffer[length] = '\0';
+    
     // Convert it to integer
     char *end = nullptr;
     long value = strtol(buffer, &end, 10);
@@ -282,13 +279,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
     // update last message received time
     mqtt_last_message_millis = millis();
     
-  } else if (strcmp(topic, "home/monitor/water/backlight") == 0){
-    if(strcmp(buffer, "on") == 0) {
-      lcd.backlight();
-      bool backlight = true;
+  } else if (strcmp(topic, "home/ui/kwa-water/pressure") == 0) {
+    char buffer[length];
+    
+    // Form a C-string from the payload
+    memcpy(buffer, payload, length);
+    buffer[length] = '\0';
+    
+    // Convert it to integer
+    char *end = nullptr;
+    long value = strtol(buffer, &end, 10);
+  
+    // Check for conversion errors
+    if (end == buffer)
+      ; // Conversion error occurred
+    else
+      Serial.println(value);
+
+
+    if(value >= 40) {
+      digitalWrite(D0, HIGH); //LED on
     } else {
-      lcd.noBacklight();
-      bool backlight = false;
+      digitalWrite(D0, LOW); 
     }
   }
   
@@ -309,7 +321,7 @@ void reconnect() {
     // Attempt to connect
     if (pubSubClient.connect(clientId.c_str())) {
       Serial.println("connected");
-      pubSubClient.subscribe("home/monitor/water/#");
+      pubSubClient.subscribe("home/ui/#");
       lcd.clear();
       //lcd.print("MQTT Connected");
       lcd.setCursor(0,1);
@@ -325,7 +337,7 @@ void reconnect() {
 }
 
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(D0, OUTPUT);
   Serial.begin(115200);  
   
   lcd.init();  
