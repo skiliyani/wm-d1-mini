@@ -7,7 +7,7 @@ const char* ssid = "SAYANI_WIFI";
 const char* password = "00011101";
 
 // MQTT broker settings
-const char* mqtt_server = "192.168.8.10";
+const char* mqtt_server = "192.168.31.10";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "home/ui/water-tank/level";
 
@@ -30,6 +30,7 @@ bool noDataShown = false;
 // Last time a message was received
 unsigned long lastMessageReceivedTime = 0;
 
+// Value received in topic
 int receivedValue = 0;
 
 // Configure progress bar
@@ -200,22 +201,26 @@ void draw_progressbar(byte percent) {
 void reconnect() {
   if (!WiFi.isConnected()) {
     Serial.println("Reconnecting to WiFi...");
+    clearDisplayAndPrintText("WiFi Connecting");
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
       Serial.print(".");
     }
     Serial.println("Connected to the WiFi network");
+    clearDisplayAndPrintText("WiFi Connected");
   }
 
   if (!mqttClient.connected()) {
     Serial.println("Reconnecting to MQTT broker...");
-    while (!mqttClient.connect("ESP8266")) {
+    clearDisplayAndPrintText("MQTT Connecting");
+    while (!mqttClient.connect("ESP8266-D1Mini-LCD")) {
       delay(500);
       Serial.print(".");
     }
     mqttClient.subscribe(mqtt_topic);
     Serial.println("Connected to the MQTT broker");
+    clearDisplayAndPrintText("MQTT Connected");
   }
 }
 
@@ -231,6 +236,17 @@ void displayProgressBar(int percentage) {
 
   // Set the flag to indicate that "No data" is not shown
   noDataShown = false;
+}
+
+void clearDisplayAndPrintText(const char* text) {
+  // Clear the display
+  lcd.clear();
+
+  // Set the cursor position to the desired location
+  lcd.setCursor(0, 0); // This will place the text at the top left corner.
+
+  // Print the text
+  lcd.print(text);
 }
 
 // MQTT callback function
@@ -258,15 +274,15 @@ void setup() {
   // Initialize serial port
   Serial.begin(115200);
 
+  // Initialize LCD display
+  lcd.init();
+  lcd.backlight();
+
   mqttClient.setServer(mqtt_server, mqtt_port);
   mqttClient.setCallback(callback);
 
   // Connect to WiFi and MQTT
   reconnect();
-
-  // Initialize LCD display
-  lcd.init();
-  lcd.backlight();
 
   // Setup progress bar
   setup_progressbar();
@@ -274,6 +290,9 @@ void setup() {
 
 // Loop function
 void loop() {
+  // Reconnect to WiFi and MQTT if necessary
+  reconnect();
+  
   // Check for incoming messages on MQTT topic
   mqttClient.loop();
 
@@ -285,6 +304,12 @@ void loop() {
     noDataShown = true;
   }
 
-  // Reconnect to WiFi and MQTT if necessary
-  reconnect();
+  // Blink the LCD display light if the received value is less than 20
+  // And the device is not starting up
+  if (receivedValue < 20 && lastMessageReceivedTime != 0) {
+    lcd.noBacklight();
+    delay(500);
+    lcd.backlight();
+    delay(500);
+  }
 }
