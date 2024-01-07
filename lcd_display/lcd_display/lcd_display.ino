@@ -7,7 +7,7 @@ const char* ssid = "SAYANI_WIFI";
 const char* password = "00011101";
 
 // MQTT broker settings
-const char* mqtt_server = "192.168.31.10";
+const char* mqtt_server = "192.168.68.10";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "home/ui/water-tank/level";
 
