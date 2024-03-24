@@ -173,6 +173,8 @@ void clearDisplayAndPrintText(const char* text) {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("Message arrived on topic: " + String(topic));
 
+  lcd.clear();
+
   // Convert the payload to an integer
   String message = "";
   for (int i = 0; i < length; i++) {
@@ -196,6 +198,7 @@ void setup() {
 
   // Initialize LCD display
   lcd.init();
+  lcd.backlight();
   
   mqttClient.setServer(mqtt_server, mqtt_port);
   mqttClient.setCallback(callback);
@@ -208,8 +211,7 @@ void setup() {
 
   // setup custom chars
   lcd.createChar(6, customTapSymbol);
-
-  lcd.backlight();
+ 
 }
 
 // Loop function
@@ -285,11 +287,8 @@ void updateProgressBar(unsigned long count, unsigned long totalCount, int lineTo
 }
 
 void updateNumber(int number) {
-  for(int i = 0; i < 16; i++) {
-    lcd.setCursor(i, 0);
-    lcd.print(" ");
-  }
   lcd.setCursor(0, 0);
+  
   lcd.write(6);
   
   int digits = numDigits(number);
