@@ -229,7 +229,9 @@ void reconnect() {
   if (!mqttClient.connected()) {
     Serial.println("Reconnecting to MQTT broker...");
     clearDisplayAndPrintText("MQTT Connecting");
-    while (!mqttClient.connect("ESP8266-D1Mini-LCD")) {
+    String clientId = "ESP8266-";
+    clientId += String(random(0xffff), HEX);
+    while (!mqttClient.connect(clientId.c_str())) {
       delay(500);
       Serial.print(".");
     }
