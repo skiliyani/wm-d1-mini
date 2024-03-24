@@ -115,6 +115,16 @@ byte END_DIV_1_OF_1[8] = {
   B11110
 }; // Char fin 1 / 1
 
+byte customTapSymbol[8] = {
+  B01110,
+  B00100,
+  B11110,
+  B11111,
+  B00011,
+  B00011,
+  B00000,
+  B00000
+};
 
 /**
  * Fonction de configuration de l'écran LCD pour la barre de progression.
@@ -130,6 +140,7 @@ void setup_progressbar() {
   lcd.createChar(4, DIV_2_OF_2);
   lcd.createChar(5, END_DIV_0_OF_1);
   lcd.createChar(6, END_DIV_1_OF_1);
+  lcd.createChar(7, customTapSymbol);
 }
 
 /**
@@ -141,9 +152,13 @@ void draw_progressbar(byte percent) {
  
   /* Affiche la nouvelle valeur sous forme numérique sur la première ligne */
   lcd.setCursor(0, 0);
-  lcd.print(F("WATER TANK ")); /* 11 chars */
-  lcd.print(percent);/* 1 to 3 chars */
-  lcd.print(F("%   "));/* 4 chars */
+  lcd.write(7);
+  lcd.setCursor(15, 0);
+  lcd.print("%");
+  int digits = numDigits(percent);
+  int startCol = max(0, 16 - 1 - digits); 
+  lcd.setCursor(startCol, 0);
+  lcd.print(percent);
   
   // N.B. Les deux espaces en fin de ligne permettent d'effacer les chiffres du pourcentage
   // précédent quand on passe d'une valeur à deux ou trois chiffres à une valeur à deux ou un chiffres.
@@ -253,6 +268,8 @@ void clearDisplayAndPrintText(const char* text) {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("Message arrived on topic: " + String(topic));
 
+  lcd.clear();
+
   // Convert the payload to an integer
   String message = "";
   for (int i = 0; i < length; i++) {
@@ -312,4 +329,14 @@ void loop() {
     lcd.backlight();
     delay(500);
   }
+}
+
+int numDigits(byte number) {
+  if (number == 0) return 1;
+  int digits = 0;
+  while (number > 0) {
+    number /= 10;
+    digits++;
+  }
+  return digits;
 }
