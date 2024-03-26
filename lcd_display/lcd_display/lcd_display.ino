@@ -12,7 +12,7 @@ const int mqtt_port = 1883;
 const char* mqtt_topic = "home/ui/water-tank/level";
 
 // LCD display settings
-LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C address 0x27
+LiquidCrystal_I2C lcd(0x27, 20, 4); // I2C address 0x27
 
 // Wifi Client
 WiFiClient wifiClient;
@@ -152,7 +152,7 @@ void updateDisplay(int percentage) {
   }
 
   updateNumber(percentage);
-  updateProgressBar(percentage, 100, 1);
+  updateProgressBar(percentage, 100, 3);
 
   // Set the flag to indicate that "No data" is not shown
   noDataShown = false;
@@ -173,7 +173,7 @@ void clearDisplayAndPrintText(const char* text) {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("Message arrived on topic: " + String(topic));
 
-  lcd.clear();
+  //lcd.clear();
 
   // Convert the payload to an integer
   String message = "";
@@ -262,8 +262,8 @@ void loop() {
 */
 void updateProgressBar(unsigned long count, unsigned long totalCount, int lineToPrintOn)
 {
-  double factor = totalCount / 80.0;        //See note above!
-  int percent = (count + 1) / factor;
+  double factor = totalCount / 100.0;        //See note above!
+  int percent = count / factor;
   int number = percent / 5;
   int remainder = percent % 5;
   if (number > 0)
@@ -275,10 +275,10 @@ void updateProgressBar(unsigned long count, unsigned long totalCount, int lineTo
     }
   }
   lcd.setCursor(number, lineToPrintOn);
-  lcd.write(remainder);
-  if (number < 16)
+  if (number < 20)
   {
-    for (int j = number + 1; j <= 16; j++)
+    lcd.write(remainder);
+    for (int j = number + 1; j < 20; j++)
     {
       lcd.setCursor(j, lineToPrintOn);
       lcd.write(0);
@@ -288,15 +288,17 @@ void updateProgressBar(unsigned long count, unsigned long totalCount, int lineTo
 
 void updateNumber(int number) {
   lcd.setCursor(0, 0);
+  lcd.print("                    "); //clear line
   
-  lcd.write(6);
+  lcd.setCursor(0, 0);
+  lcd.write(6); //display tap icon
   
   int digits = numDigits(number);
-  int startCol = max(0, 16 - 1 - digits); 
+  int startCol = max(0, 20 - 1 - digits); 
   lcd.setCursor(startCol, 0);
   lcd.print(number);
 
-  lcd.setCursor(15, 0);
+  lcd.setCursor(19, 0);
   lcd.print("%");
 }
 
