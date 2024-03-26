@@ -229,15 +229,6 @@ void loop() {
     lcd.noBacklight();
     noDataShown = true;
   }
-
-  // Blink the LCD display light if the received value is less than 20
-  // And the device is not starting up
-  if (receivedValue < 20 && lastMessageReceivedTime != 0) {
-    lcd.noBacklight();
-    delay(500);
-    lcd.backlight();
-    delay(500);
-  }
 }
 
 /*
