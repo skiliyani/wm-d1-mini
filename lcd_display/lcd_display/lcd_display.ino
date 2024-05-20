@@ -222,8 +222,8 @@ void loop() {
   // Check for incoming messages on MQTT topic
   mqttClient.loop();
 
-  // Display "No data" if no message has been received for 1 minute and "No data" is not already shown
-  if (millis() - lastMessageReceivedTime > 60000 && !noDataShown) {
+  // Display "No data" if no message has been received for 5 minutes and "No data" is not already shown
+  if (millis() - lastMessageReceivedTime > 300000 && !noDataShown) {
     lcd.clear();
     lcd.print("No data");
     lcd.noBacklight();
